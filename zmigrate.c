@@ -338,9 +338,13 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
     {       
 		
-		// TODO: need workaround on \n or \r\n at the end of string
-		if (jsonstr[strlen(jsonstr) - 1] != '}' && jsonstr[strlen(jsonstr) - 1] != ']')
-			jsonstr[strlen(jsonstr)-1]='\0';
+		#ifndef _WIN32
+		jsonstr[strlen(jsonstr)-1]='\0';
+		#else
+		// on Windows any data returned by komodo-cli ends with 2 symols - 0x0d, 0x0a (\r\n), so, strip them here, may be
+		// in future better to add something like trim(jsonstr) to remove trailing and ending special symbols from string.
+		jsonstr[strlen(jsonstr)-2] = '\0';
+		#endif
         fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
         if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
             *retstrp = jsonstr;
@@ -594,7 +598,11 @@ cJSON *z_getoperationstatus(char *refcoin,char *acname,char *opid)
 cJSON *z_getoperationresult(char *refcoin,char *acname,char *opid)
 {
     cJSON *retjson; char *retstr,str[65],params[512];
-    sprintf(params,"'[\"%s\"]'",opid);
+	#ifndef _WIN32
+	sprintf(params, "'[\"%s\"]'", opid);
+	#else
+	sprintf(params, "\"[\\\"%s\\\"]\"", opid);
+	#endif	
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getoperationresult",params,"","","")) != 0 )
     {
         return(retjson);
@@ -651,6 +659,8 @@ int64_t z_getbalance(char *refcoin,char *acname,char *coinaddr)
     else if ( retstr != 0 )
     {
         amount = atof(retstr) * SATOSHIDEN;
+		// possible issue in case like retstr="8.64761904\r", cmpstr="8.64761904\r"
+
         sprintf(cmpstr,"%.8f",dstr(amount));
         if ( strcmp(retstr,cmpstr) != 0 )
             amount++;

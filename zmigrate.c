@@ -307,15 +307,27 @@ char *REFCOIN_CLI;
 cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char *arg0,char *arg1,char *arg2,char *arg3)
 {
     long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[256];
-    sprintf(fname,"/tmp/zmigrate.%s",method);
+	#ifndef _WIN32
+	sprintf(fname,"/tmp/zmigrate.%s",method);
+	#else
+	sprintf(fname, "zmigrate.%s", method);
+	#endif
     if ( acname[0] != 0 )
     {
         if ( refcoin[0] != 0 && strcmp(refcoin,"KMD") != 0 )
             printf("unexpected: refcoin.(%s) acname.(%s)\n",refcoin,acname);
-        sprintf(cmdstr,"./komodo-cli -ac_name=%s %s %s %s %s %s > %s\n",acname,method,arg0,arg1,arg2,arg3,fname);
+		#ifndef _WIN32
+		sprintf(cmdstr,"./komodo-cli -ac_name=%s %s %s %s %s %s > %s\n",acname,method,arg0,arg1,arg2,arg3,fname);
+		#else
+		sprintf(cmdstr, "komodo-cli.exe -ac_name=%s %s %s %s %s %s > %s\n", acname, method, arg0, arg1, arg2, arg3, fname);
+		#endif	
     }
     else if ( strcmp(refcoin,"KMD") == 0 )
-        sprintf(cmdstr,"./komodo-cli %s %s %s %s %s > %s\n",method,arg0,arg1,arg2,arg3,fname);
+		#ifndef _WIN32
+		sprintf(cmdstr,"./komodo-cli %s %s %s %s %s > %s\n",method,arg0,arg1,arg2,arg3,fname);
+		#else
+		sprintf(cmdstr, "komodo-cli.exe %s %s %s %s %s > %s\n", method, arg0, arg1, arg2, arg3, fname);
+		#endif
     else if ( REFCOIN_CLI != 0 && REFCOIN_CLI[0] != 0 )
     {
         sprintf(cmdstr,"%s %s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,fname);
@@ -325,8 +337,10 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
     {       
-        jsonstr[strlen(jsonstr)-1]='\0';
-        //fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
+		
+		if (jsonstr[strlen(jsonstr) - 1] != '}' && jsonstr[strlen(jsonstr) - 1] != ']')
+			jsonstr[strlen(jsonstr)-1]='\0';
+        fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
         if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
             *retstrp = jsonstr;
         else free(jsonstr);
@@ -877,12 +891,20 @@ int32_t main(int32_t argc,char **argv)
     }
     if ( strcmp(argv[1],"KMD") == 0 )
     {
-        REFCOIN_CLI = "./komodo-cli";
+		#ifndef _WIN32
+		REFCOIN_CLI = "./komodo-cli";
+		#else
+		REFCOIN_CLI = "komodo-cli.exe";
+		#endif // !_WIN32
         coinstr = clonestr("KMD");
     }
     else
     {
+		#ifndef _WIN32
         sprintf(buf,"./komodo-cli -ac_name=%s",argv[1]);
+		#else
+		sprintf(buf, "komodo-cli.exe -ac_name=%s", argv[1]);
+		#endif // !_WIN32
         REFCOIN_CLI = clonestr(buf);
         coinstr = clonestr(argv[1]);
     }

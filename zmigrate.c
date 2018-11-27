@@ -338,6 +338,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
     {       
 		
+		// TODO: need workaround on \n or \r\n at the end of string
 		if (jsonstr[strlen(jsonstr) - 1] != '}' && jsonstr[strlen(jsonstr) - 1] != ']')
 			jsonstr[strlen(jsonstr)-1]='\0';
         fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
@@ -571,8 +572,13 @@ cJSON *z_listoperationids(char *refcoin,char *acname)
 cJSON *z_getoperationstatus(char *refcoin,char *acname,char *opid)
 {
     cJSON *retjson; char *retstr,str[65],params[512];
-    sprintf(params,"'[\"%s\"]'",opid);
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getoperationstatus",params,"","","")) != 0 )
+	#ifndef _WIN32
+	sprintf(params, "'[\"%s\"]'", opid);
+	#else
+	sprintf(params, "\"[\\\"%s\\\"]\"", opid);
+	#endif // !_WIN32
+    
+	if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getoperationstatus",params,"","","")) != 0 )
     {
         //printf("got status (%s)\n",jprint(retjson,0));
         return(retjson);
@@ -739,8 +745,13 @@ void importaddress(char *refcoin,char *acname,char *depositaddr)
 int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *destaddr,int64_t amount)
 {
     cJSON *retjson; char *retstr,params[1024],addr[128];
-    sprintf(params,"'[{\"address\":\"%s\",\"amount\":%.8f}]'",destaddr,dstr(amount));
-    sprintf(addr,"\"%s\"",srcaddr);
+	#ifndef _WIN32
+	sprintf(params, "'[{\"address\":\"%s\",\"amount\":%.8f}]'", destaddr, dstr(amount));
+	sprintf(addr, "\"%s\"", srcaddr);
+	#else
+	sprintf(params, "[\"{\\\"address\\\":\\\"%s\\\",\\\"amount\\\":%.8f}]\"", destaddr, dstr(amount));
+	sprintf(addr, "\"%s\"", srcaddr);
+	#endif
     if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_sendmany",addr,params,"","")) != 0 )
     {
         printf("unexpected json z_sendmany.(%s)\n",jprint(retjson,0));

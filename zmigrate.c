@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include "cJSON.h"
 typedef union _bits256 bits256; // declared in ../includes/curve25519.h
+#include "logapi.h"
 #endif // !_WIN32
 
 #include <memory.h>
@@ -345,7 +346,8 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
 		// in future better to add something like trim(jsonstr) to remove trailing and ending special symbols from string.
 		jsonstr[strlen(jsonstr)-2] = '\0';
 		#endif
-        fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
+        //fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
+		logprint(LOG_DEBUG, "%s -> jsonstr.(%s)\n", cmdstr, jsonstr);
         if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
             *retstrp = jsonstr;
         else free(jsonstr);
@@ -702,7 +704,8 @@ int64_t find_onetime_amount(char *coinstr,char *coinaddr)
                 {
                     strcpy(coinaddr,addr);
                     amount = z_getbalance(coinstr,"",coinaddr);
-                    printf("found address.(%s) with amount %.8f\n",coinaddr,dstr(amount));
+                    //printf("found address.(%s) with amount %.8f\n",coinaddr,dstr(amount));
+					logprint(LOG_INFO, "found address.(%s) with amount %.8f\n", coinaddr, dstr(amount));
                     break;
                 }
             }
@@ -727,7 +730,8 @@ int64_t find_sprout_amount(char *coinstr,char *zcaddr)
                 {
                     strcpy(zcaddr,addr);
                     amount = z_getbalance(coinstr,"",zcaddr);
-                    printf("found address.(%s) with amount %.8f\n",zcaddr,dstr(amount));
+                    //printf("found address.(%s) with amount %.8f\n",zcaddr,dstr(amount));
+					logprint(LOG_INFO, "found address.(%s) with amount %.8f\n", zcaddr, dstr(amount));
                     break;
                 }
             }
@@ -764,13 +768,15 @@ int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *
 	#endif
     if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_sendmany",addr,params,"","")) != 0 )
     {
-        printf("unexpected json z_sendmany.(%s)\n",jprint(retjson,0));
+        //printf("unexpected json z_sendmany.(%s)\n",jprint(retjson,0));
+		logprint(LOG_ERR, "unexpected json z_sendmany.(%s)\n", jprint(retjson, 0));
         free_json(retjson);
         return(-1);
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"z_sendmany.(%s) -> opid.(%s)\n",coinstr,retstr);
+        //fprintf(stderr,"z_sendmany.(%s) -> opid.(%s)\n",coinstr,retstr);
+		logprint(LOG_INFO, "z_sendmany.(%s) -> opid.(%s)\n", coinstr, retstr);
         strcpy(opidstr,retstr);
         free(retstr);
         return(0);
@@ -904,6 +910,7 @@ int32_t have_pending_opid(char *coinstr,int32_t clearresults)
 
 int32_t main(int32_t argc,char **argv)
 {
+
     char buf[1024],*zsaddr,*coinstr;
     if ( argc != 3 )
     {
@@ -931,21 +938,25 @@ int32_t main(int32_t argc,char **argv)
     }
     if ( argv[2][0] != 'z' || argv[2][1] != 's' )
     {
-        printf("invalid sapling address (%s)\n",argv[2]);
+        //printf("invalid sapling address (%s)\n",argv[2]);
+		logprint(LOG_ERR, "invalid sapling address (%s)\n", argv[2]);
         return(-2);
     }
     if ( z_validateaddress(coinstr,"",argv[2],"ismine") == 0 )
     {
-        printf("invalid sapling address (%s)\n",argv[2]);
+        //printf("invalid sapling address (%s)\n",argv[2]);
+		logprint(LOG_ERR, "invalid sapling address (%s)\n", argv[2]);
         return(-3);
     }
     zsaddr = clonestr(argv[2]);
-    printf("%s: %s %s\n",REFCOIN_CLI,coinstr,zsaddr);
+    //printf("%s: %s %s\n",REFCOIN_CLI,coinstr,zsaddr);
+	logprint(LOG_DEBUG, "%s: %s %s\n", REFCOIN_CLI, coinstr, zsaddr);
     char coinaddr[64],zcaddr[128],opidstr[128]; int32_t alldone,finished; int64_t amount,stdamount,txfee;
     stdamount = 1000 * SATOSHIDEN;
     txfee = 10000;
 again:
-    printf("start processing zmigrate\n");
+    //printf("start processing zmigrate\n");
+	logprint(LOG_NOTICE, "start processing zmigrate\n");
     finished = 0;
     while ( 1 )
     {
@@ -970,7 +981,7 @@ again:
             if ( getnewaddress(coinaddr,coinstr,"") == 0 )
             {
                 z_sendmany(opidstr,coinstr,"",zcaddr,coinaddr,amount-txfee);
-            } else printf("couldnt getnewaddress!\n");
+            } else logprint(LOG_ERR, "couldnt getnewaddress!\n"); // printf("couldnt getnewaddress!\n");
             alldone = 0;
             sleep(10);
         }
@@ -981,7 +992,8 @@ again:
         } else finished = 0 ;
     }
     sleep(3);
-    printf("%s %s ALLDONE! taddr %.8f sprout %.8f mempool empty.%d\n",coinstr,zsaddr,dstr(find_onetime_amount(coinstr,coinaddr)),dstr(find_sprout_amount(coinstr,zcaddr)),empty_mempool(coinstr,""));
+    //printf("%s %s ALLDONE! taddr %.8f sprout %.8f mempool empty.%d\n",coinstr,zsaddr,dstr(find_onetime_amount(coinstr,coinaddr)),dstr(find_sprout_amount(coinstr,zcaddr)),empty_mempool(coinstr,""));
+	logprint(LOG_BLUE, "%s %s ALLDONE! taddr %.8f sprout %.8f mempool empty.%d\n", coinstr, zsaddr, dstr(find_onetime_amount(coinstr, coinaddr)), dstr(find_sprout_amount(coinstr, zcaddr)), empty_mempool(coinstr, ""));
     sleep(3);
     if ( find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 )
     {

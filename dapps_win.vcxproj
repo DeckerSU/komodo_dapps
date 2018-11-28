@@ -117,6 +117,8 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="deps\logapi.c" />
+    <ClCompile Include="deps\winansi.c" />
     <ClCompile Include="zmigrate.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

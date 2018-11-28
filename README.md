@@ -3,6 +3,7 @@
 ### zmigrate
 
 **Q.** What is zmigrate?
+
 **A.** App to send funds from zc address to zs address directly, sprout to sapling. 
 
 More detailed description:
@@ -22,4 +23,5 @@ The GUI or user would be expected to generate a sapling address and then call z_
 ![](./docs/ifMbGoA0_q.png) 
 
 **Q.** Is zmigrate available for Windows / Linux / MacOS users?
+
 **A.** Linux users can built zmigrate dapp from this repo using `./makedapps` or from original komodod repo, it located in [src/cc/dapps](https://github.com/jl777/komodo/tree/dev/src/cc/dapps) . Windows users can build zmigrate using `dapps_win.sln` solution file for MSVC. We recommend to use Microsoft Visual Studio Professional 2015 Version 14.0.25431.01 Update 3 for build.

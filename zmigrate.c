@@ -21,8 +21,8 @@
 #include <stdint.h>
 #include "cJSON.h"
 typedef union _bits256 bits256; // declared in ../includes/curve25519.h
-#include "logapi.h"
 #endif // !_WIN32
+#include "logapi.h"
 
 #include <memory.h>
 #include "cJSON.c"

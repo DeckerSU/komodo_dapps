@@ -1,2 +1,4 @@
-gcc -o oraclefeed cc/dapps/oraclefeed.c -lm
-gcc -o zmigrate cc/dapps/zmigrate.c -lm
+#!/bin/bash
+#gcc -o oraclefeed cc/dapps/oraclefeed.c -lm
+#gcc -o zmigrate cc/dapps/zmigrate.c -lm
+gcc -o zmigrate -I./deps zmigrate.c deps/logapi.c -lm

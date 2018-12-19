@@ -1114,7 +1114,7 @@ again:
             {
                 z_sendmany(opidstr,coinstr,"",zcaddr,coinaddr,amount-txfee);
                 lastopid = (uint32_t)time(NULL);
-            } else printf("couldnt getnewaddress!\n");
+            } else logprint(LOG_ERR, "couldnt getnewaddress!\n");
             sleep(3);
             continue;
         }

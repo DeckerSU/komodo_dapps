@@ -27,6 +27,20 @@ typedef union _bits256 bits256; // declared in ../includes/curve25519.h
 #include <memory.h>
 #include "cJSON.c"
 
+/*
+z_migrate: the purpose of z_migrate is to make converting of all sprout outputs into sapling. the usage would be for the user to specify a sapling address and call z_migrate zsaddr, until it returns that there is nothing left to be done.
+
+its main functionality is quite similar to a z_mergetoaddress ANY_ZADDR -> onetime_taddr followed by a z_sendmany onetime_taddr -> zsaddr
+
+since the z_mergetoaddress will take time, it would just queue up an async operation. When it starts, it should see if there are any onetime_taddr with 10000.0001 funds in it, that is a signal for it to do the sapling tx and it can just do that without async as it is fast enough, especially with a taddr input. Maybe it limits itself to one,  or it does all possible taddr -> sapling as fast as it can. either is fine as it will be called over and over anyway.
+
+It might be that there is nothing to do, but some operations are pending. in that case it would return such a status. as soon as the operation finishes, there would be more work to do.
+
+the amount sent to the taddr, should be 10000.0001
+
+The GUI or user would be expected to generate a sapling address and then call z_migrate saplingaddr in a loop, until it returns that it is all done. this loop should pause for 10 seconds or so, if z_migrate is just waiting for opid to complete.
+*/
+
 bits256 zeroid;
 
 char hexbyte(int32_t c)
@@ -672,12 +686,50 @@ int64_t z_getbalance(char *refcoin,char *acname,char *coinaddr)
     return (amount);
 }
 
+int32_t z_exportkey(char *privkey,char *refcoin,char *acname,char *zaddr)
+{
+    cJSON *retjson; char *retstr,cmpstr[64]; int64_t amount=0;
+    privkey[0] = 0;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_exportkey",zaddr,"","","")) != 0 )
+    {
+        //fprintf(stderr,"z_exportkey.(%s) %s returned json!\n",refcoin,acname);
+		logprint(LOG_DEBUG, "z_exportkey.(%s) %s returned json!\n", refcoin, acname);
+        free_json(retjson);
+        return(-1);
+    }
+    else if ( retstr != 0 )
+    {
+        //printf("retstr %s -> %.8f\n",retstr,dstr(amount));
+        strcpy(privkey,retstr);
+        free(retstr);
+        return(0);
+    }
+}
+
 int32_t getnewaddress(char *coinaddr,char *refcoin,char *acname)
 {
     cJSON *retjson; char *retstr; int64_t amount=0;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getnewaddress","","","","")) != 0 )
     {
         fprintf(stderr,"getnewaddress.(%s) %s returned json!\n",refcoin,acname);
+        free_json(retjson);
+        return(-1);
+    }
+    else if ( retstr != 0 )
+    {
+        strcpy(coinaddr,retstr);
+        free(retstr);
+        return(0);
+    }
+}
+
+int32_t z_getnewaddress(char *coinaddr,char *refcoin,char *acname,char *typestr)
+{
+    cJSON *retjson; char *retstr; int64_t amount=0;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getnewaddress",typestr,"","","")) != 0 )
+    {
+        //fprintf(stderr,"z_getnewaddress.(%s) %s returned json!\n",refcoin,acname);
+		logprint(LOG_DEBUG, "z_getnewaddress.(%s) %s returned json!\n", refcoin, acname);
         free_json(retjson);
         return(-1);
     }
@@ -762,9 +814,11 @@ int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *
 	#ifndef _WIN32
 	sprintf(params, "'[{\"address\":\"%s\",\"amount\":%.8f}]'", destaddr, dstr(amount));
 	sprintf(addr, "\"%s\"", srcaddr);
+	printf("z_sendmany from.(%s) -> %s\n",srcaddr,params);
 	#else
 	sprintf(params, "[\"{\\\"address\\\":\\\"%s\\\",\\\"amount\\\":%.8f}]\"", destaddr, dstr(amount));
 	sprintf(addr, "\"%s\"", srcaddr);
+	logprint(LOG_DEBUG, "z_sendmany from.(%s) -> %s\n",srcaddr,params);
 	#endif
     if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_sendmany",addr,params,"","")) != 0 )
     {
@@ -781,6 +835,39 @@ int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *
         free(retstr);
         return(0);
     }
+}
+
+int32_t z_mergetoaddress(char *opidstr,char *coinstr,char *acname,char *destaddr)
+{
+    cJSON *retjson; char *retstr,addr[128],*opstr; int32_t retval = -1;
+    sprintf(addr,"[\\\"ANY_SPROUT\\\"]");
+    //printf("z_sendmany from.(%s) -> %s\n",addr,destaddr);
+    if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_mergetoaddress",addr,destaddr,"","")) != 0 )
+    {
+        /*{
+            "remainingUTXOs": 0,
+            "remainingTransparentValue": 0.00000000,
+            "remainingNotes": 222,
+            "remainingShieldedValue": 5413.39093055,
+            "mergingUTXOs": 0,
+            "mergingTransparentValue": 0.00000000,
+            "mergingNotes": 10,
+            "mergingShieldedValue": 822.47447172,
+            "opid": "opid-f28f6261-4120-436c-aca5-859870a40a70"
+        }*/
+        if ( (opstr= jstr(retjson,"opid")) != 0 )
+            strcpy(opidstr,opstr);
+        retval = jint(retjson,"remainingNotes");
+        fprintf(stderr,"%s\n",jprint(retjson,0));
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"z_mergetoaddress.(%s) -> opid.(%s)\n",coinstr,retstr);
+        strcpy(opidstr,retstr);
+        free(retstr);
+    }
+    return(retval);
 }
 
 int32_t empty_mempool(char *coinstr,char *acname)
@@ -910,7 +997,6 @@ int32_t have_pending_opid(char *coinstr,int32_t clearresults)
 
 int32_t main(int32_t argc,char **argv)
 {
-
     char buf[1024],*zsaddr,*coinstr;
     if ( argc != 3 )
     {
@@ -951,49 +1037,83 @@ int32_t main(int32_t argc,char **argv)
     zsaddr = clonestr(argv[2]);
     //printf("%s: %s %s\n",REFCOIN_CLI,coinstr,zsaddr);
 	logprint(LOG_DEBUG, "%s: %s %s\n", REFCOIN_CLI, coinstr, zsaddr);
-    char coinaddr[64],zcaddr[128],opidstr[128]; int32_t alldone,finished; int64_t amount,stdamount,txfee;
-    stdamount = 1000 * SATOSHIDEN;
+    uint32_t lastopid; char coinaddr[64],privkey[1024],zcaddr[128],opidstr[128]; int32_t finished; int64_t amount,stdamount,txfee;
+    //stdamount = 500 * SATOSHIDEN;
     txfee = 10000;
 again:
+    if ( z_getnewaddress(zcaddr,coinstr,"","sprout") == 0 )
+    {
+        z_exportkey(privkey,coinstr,"",zcaddr);
+        //printf("zcaddr.(%s) -> z_exportkey.(%s)\n",zcaddr,privkey);
+		logprint(LOG_INFO, "zcaddr.(%s) -> z_exportkey.(%s)\n", zcaddr, privkey);
+        while ( 1 )
+        {
+            if ( have_pending_opid(coinstr,0) != 0 )
+            {
+                sleep(10);
+                continue;
+            }
+            if ( z_mergetoaddress(opidstr,coinstr,"",zcaddr) <= 0 )
+                break;
+        }
+    }
     //printf("start processing zmigrate\n");
 	logprint(LOG_NOTICE, "start processing zmigrate\n");
+    lastopid = (uint32_t)time(NULL);
     finished = 0;
     while ( 1 )
     {
         if ( have_pending_opid(coinstr,0) != 0 )
         {
-            sleep(3);
+            sleep(10);
             continue;
         }
-        alldone = 1;
         if ( (amount= find_onetime_amount(coinstr,coinaddr)) > txfee )
         {
             // find taddr with funds and send all to zsaddr
             z_sendmany(opidstr,coinstr,"",coinaddr,zsaddr,amount-txfee);
-            alldone = 0;
+            lastopid = (uint32_t)time(NULL);
             sleep(1);
+            continue;
         }
-        if ( alldone != 0 && (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
+        if ( (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
         {
             // generate taddr, send max of 10000.0001
-            if ( amount > stdamount+txfee )
-                amount = stdamount + txfee;
+            static int64_t lastamount,lastamount2,lastamount3,lastamount4,refamount = 5000 * SATOSHIDEN;
+            stdamount = refamount;
+            if ( amount == lastamount && amount == lastamount2 )
+            {
+                stdamount /= 10;
+                if ( amount == lastamount3 && amount == lastamount4 )
+                    stdamount /= 10;
+            }
+            if ( stdamount < SATOSHIDEN )
+            {
+                stdamount = SATOSHIDEN;
+                refamount = SATOSHIDEN * 50;
+            }
+            if ( stdamount < refamount )
+                refamount = stdamount;
+            lastamount4 = lastamount3;
+            lastamount3 = lastamount2;
+            lastamount2 = lastamount;
+            lastamount = amount;
+            if ( amount > stdamount+2*txfee )
+                amount = stdamount + 2*txfee;
             if ( getnewaddress(coinaddr,coinstr,"") == 0 )
             {
                 z_sendmany(opidstr,coinstr,"",zcaddr,coinaddr,amount-txfee);
-            } else logprint(LOG_ERR, "couldnt getnewaddress!\n"); // printf("couldnt getnewaddress!\n");
-            alldone = 0;
-            sleep(10);
+                lastopid = (uint32_t)time(NULL);
+            } else printf("couldnt getnewaddress!\n");
+            sleep(3);
+            continue;
         }
-        if ( alldone != 0 && find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 )
-        {
-            if ( finished++ > 10 )
+        if ( time(NULL) > lastopid+600 )
                 break;
-        } else finished = 0 ;
     }
     sleep(3);
     //printf("%s %s ALLDONE! taddr %.8f sprout %.8f mempool empty.%d\n",coinstr,zsaddr,dstr(find_onetime_amount(coinstr,coinaddr)),dstr(find_sprout_amount(coinstr,zcaddr)),empty_mempool(coinstr,""));
-	logprint(LOG_BLUE, "%s %s ALLDONE! taddr %.8f sprout %.8f mempool empty.%d\n", coinstr, zsaddr, dstr(find_onetime_amount(coinstr, coinaddr)), dstr(find_sprout_amount(coinstr, zcaddr)), empty_mempool(coinstr, ""));
+    logprint(LOG_BLUE, "%s %s ALLDONE! taddr %.8f sprout %.8f mempool empty.%d\n",coinstr,zsaddr,dstr(find_onetime_amount(coinstr,coinaddr)),dstr(find_sprout_amount(coinstr,zcaddr)),empty_mempool(coinstr,""));
     sleep(3);
     if ( find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 )
     {

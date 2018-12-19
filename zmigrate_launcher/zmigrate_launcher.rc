@@ -1,0 +1,59 @@
+IDI_ICON1 ICON DISCARDABLE "icons/komodo.ico"
+IDI_ICON2 ICON DISCARDABLE "icons/komodo_testnet.ico"
+
+#include <windows.h>             // needed for VERSIONINFO
+
+/**
+ * Copyright year (2009-this)
+ * Todo: update this when changing our copyright comments in the source
+ */
+#define COPYRIGHT_YEAR 2018
+
+#define CLIENT_VERSION_MAJOR 1
+#define CLIENT_VERSION_MINOR 0
+#define CLIENT_VERSION_REVISION 0
+#define CLIENT_VERSION_BUILD 0
+
+/**
+ * Converts the parameter X to a string after macro replacement on X has been performed.
+ * Don't merge these into one macro!
+ */
+#define STRINGIZE(X) DO_STRINGIZE(X)
+#define DO_STRINGIZE(X) #X
+
+//! Copyright string used in Windows .rc files
+#define COPYRIGHT_STR "2009-" STRINGIZE(COPYRIGHT_YEAR) " The Bitcoin Core Developers, The Zcash developers, Komodo developers, and Verus developers"
+
+#define VER_PRODUCTVERSION     CLIENT_VERSION_MAJOR,CLIENT_VERSION_MINOR,CLIENT_VERSION_REVISION,CLIENT_VERSION_BUILD
+#define VER_PRODUCTVERSION_STR STRINGIZE(CLIENT_VERSION_MAJOR) "." STRINGIZE(CLIENT_VERSION_MINOR) "." STRINGIZE(CLIENT_VERSION_REVISION) "." STRINGIZE(CLIENT_VERSION_BUILD)
+#define VER_FILEVERSION        VER_PRODUCTVERSION
+#define VER_FILEVERSION_STR    VER_PRODUCTVERSION_STR
+#define PACKAGE_NAME           "ZMigrate Launcher"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     VER_FILEVERSION
+PRODUCTVERSION  VER_PRODUCTVERSION
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        VFT_APP
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4" // U.S. English - multilingual (hex)
+        BEGIN
+            VALUE "CompanyName",        "Komodo"
+            VALUE "FileDescription",    PACKAGE_NAME " (Windows)"
+            VALUE "FileVersion",        VER_FILEVERSION_STR
+            VALUE "InternalName",       "ZMigrate Launcher"
+            VALUE "LegalCopyright",     COPYRIGHT_STR
+            VALUE "LegalTrademarks1",   ""
+            VALUE "OriginalFilename",   "zmigrate_launcher.exe"
+            VALUE "ProductName",        PACKAGE_NAME
+            VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
+        END
+    END
+
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1252 // language neutral - multilingual (decimal)
+    END
+END

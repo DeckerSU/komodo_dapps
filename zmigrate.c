@@ -754,6 +754,11 @@ int64_t find_onetime_amount(char *coinstr,char *coinaddr)
                 item = jitem(array,i);
                 if ( (addr= jstr(item,"address")) != 0 )
                 {
+					if (is_cJSON_False(jobj(item, "spendable")) != 0)
+					{
+						continue;
+					}
+
                     strcpy(coinaddr,addr);
                     amount = z_getbalance(coinstr,"",coinaddr);
                     //printf("found address.(%s) with amount %.8f\n",coinaddr,dstr(amount));
@@ -840,7 +845,11 @@ int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *
 int32_t z_mergetoaddress(char *opidstr,char *coinstr,char *acname,char *destaddr)
 {
     cJSON *retjson; char *retstr,addr[128],*opstr; int32_t retval = -1;
-    sprintf(addr,"[\\\"ANY_SPROUT\\\"]");
+	#ifndef _WIN32
+	sprintf(addr,"[\\\"ANY_SPROUT\\\"]");
+	#else
+	sprintf(addr, "\"[\\\"ANY_SPROUT\\\"]\"");
+	#endif
     //printf("z_sendmany from.(%s) -> %s\n",addr,destaddr);
     if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_mergetoaddress",addr,destaddr,"","")) != 0 )
     {
@@ -863,7 +872,8 @@ int32_t z_mergetoaddress(char *opidstr,char *coinstr,char *acname,char *destaddr
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"z_mergetoaddress.(%s) -> opid.(%s)\n",coinstr,retstr);
+        //fprintf(stderr,"z_mergetoaddress.(%s) -> opid.(%s)\n",coinstr,retstr);
+		logprint(LOG_ERR, "z_mergetoaddress.(%s) -> opid.(%s)\n", coinstr, retstr);
         strcpy(opidstr,retstr);
         free(retstr);
     }

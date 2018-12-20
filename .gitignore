@@ -5,3 +5,13 @@ x64
 *.filters
 .vs
 *.opendb
+build-zmigrate_launcher*/
+!zmigrate_bin/
+*.dll
+*.exe
+*.7z
+*.user
+zmigrate.z*
+zmigrate.g*
+zmigrate.l*
+

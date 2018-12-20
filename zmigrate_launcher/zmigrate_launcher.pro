@@ -33,4 +33,6 @@ HEADERS += \
 FORMS += \
         mainwindow.ui
 
+#windows:LIBS += -luser32
+
 windows:RC_FILE = zmigrate_launcher.rc

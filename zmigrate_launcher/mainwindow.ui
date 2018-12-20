@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>504</width>
-    <height>186</height>
+    <height>253</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -46,7 +46,7 @@
          </font>
         </property>
         <property name="text">
-         <string>z-address (sapling):</string>
+         <string>Z-address (sapling):</string>
         </property>
        </widget>
       </item>
@@ -61,6 +61,23 @@
        <widget class="QPushButton" name="StartButton">
         <property name="text">
          <string>Start zmigrate ...</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPlainTextEdit" name="plainTextEdit">
+        <property name="autoFillBackground">
+         <bool>false</bool>
+        </property>
+        <property name="plainText">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="linkLabel">
+        <property name="text">
+         <string>TextLabel</string>
         </property>
        </widget>
       </item>

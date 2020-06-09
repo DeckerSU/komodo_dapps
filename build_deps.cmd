@@ -1,5 +1,6 @@
 @echo off
 set ProjectFolder=%CD%
+mkdir %CD%\win_depends
 rem call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 8.1
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 8.1
 :compile_curl

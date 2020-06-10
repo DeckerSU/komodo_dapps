@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
   char* get_komodo_config_path();
+  char* get_komodo_config_parent_path();
   bool is_komodo_config_filled();
   bool fill_config(); //! Fill configs
   const char* get_cfg_value(const char* ticker, const char* field); //! return NULL if not found

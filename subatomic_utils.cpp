@@ -81,7 +81,8 @@ void dump_cfg() {
 char* get_komodo_config_path()
 {
   #ifdef _WIN32
-  fs::path conf_root = fs::path(std::getenv("APPDATA")) / ".komodo/komodo.conf";
+  fs::path conf_root = fs::path(std::getenv("APPDATA")) / "Komodo" / "komodo.conf";
+  std::cerr << conf_root << std::endl;
   #else
   fs::path conf_root = fs::path(std::getenv("HOME")) / ".komodo/komodo.conf";
   #endif
@@ -97,7 +98,8 @@ char* get_komodo_config_path()
 char* get_komodo_config_parent_path()
 {
   #ifdef _WIN32
-  fs::path conf_root = fs::path(std::getenv("APPDATA")) / ".komodo";
+  fs::path conf_root = fs::path(std::getenv("APPDATA")) / "Komodo";
+  std::cerr << conf_root << std::endl;
   #else
   fs::path conf_root = fs::path(std::getenv("HOME")) / ".komodo";
   #endif

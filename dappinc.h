@@ -341,7 +341,11 @@ char *REFCOIN_CLI,DPOW_pubkeystr[67],DPOW_secpkeystr[67],DPOW_handle[67],DPOW_re
 cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char *arg0,char *arg1,char *arg2,char *arg3,char *arg4,char *arg5,char *arg6)
 {
     long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[32768];
+#ifndef _WIN32
     sprintf(fname,"/tmp/notarizer_%s_%d",method,(rand() >> 17) % 10000);
+#else
+    sprintf(fname, "notarizer_%s_%d", method, (rand() >> 17) % 10000);
+#endif
     //if ( (acname == 0 || acname[0] == 0) && strcmp(refcoin,"KMD") != 0 )
     //    acname = refcoin;
     if ( acname[0] != 0 )
@@ -362,7 +366,13 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
     {
+        #ifndef _WIN32
         jsonstr[strlen(jsonstr)-1]='\0';
+        #else
+        // on Windows any data returned by komodo-cli ends with 2 symols - 0x0d, 0x0a (\r\n), so, strip them here, may be
+        // in future better to add something like trim(jsonstr) to remove trailing and ending special symbols from string.
+        jsonstr[strlen(jsonstr) - 2] = '\0';
+        #endif
         //fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
         if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
             *retstrp = jsonstr;

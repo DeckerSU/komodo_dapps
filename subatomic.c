@@ -1393,10 +1393,23 @@ int32_t main(int32_t argc,char **argv)
                 }
             }
         }
-        else if ( argc == 5 && atol(hashstr) > 10000 )
+        else if ( argc == 5 &&
+            #ifndef NATIVE_WINDOWS
+            atol(hashstr)
+            #else
+            strtoul(hashstr, NULL, 10)
+            #endif
+            > 10000
+            )
         {
             char checkstr[32]; uint64_t mult = 1;
+            // Windows: atol("3419631520") = 2147483647, bcz long is -2,147,483,648 to 2,147,483,647, but unsigned long is 0 to 4,294,967,295 .
+            #ifndef NATIVE_WINDOWS
             M.origid = (uint32_t)atol(hashstr);
+            #else
+            M.origid = strtoul(hashstr, NULL, 10);
+            #endif // !NATIVE_WINDOWS
+
             sprintf(checkstr,"%u",M.origid);
             if ( strcmp(checkstr,hashstr) == 0 ) // alice
             {

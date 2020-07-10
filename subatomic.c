@@ -16,7 +16,7 @@
 // build subatomic and put in path: git pull; gcc cc/dapps/subatomic.c -lm -o subatomic; cp subatomic /usr/bin
 // alice sends relcoin and gets basecoin
 
-#define DEXP2P_CHAIN ((char *)"DEX")
+#define DEXP2P_CHAIN ((char *)"SHURLI0")
 #define DEXP2P_PUBKEYS ((char *)"subatomic")
 #include "dappinc.h"
 

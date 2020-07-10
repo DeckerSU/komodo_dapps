@@ -844,7 +844,12 @@ cJSON *z_listoperationids(char *refcoin,char *acname)
 cJSON *z_getoperationstatus(char *refcoin,char *acname,char *opid)
 {
     cJSON *retjson; char *retstr,str[65],params[512];
+    #ifndef NATIVE_WINDOWS
     sprintf(params,"'[\"%s\"]'",opid);
+    #else
+    sprintf(params, "\"[\\\"%s\\\"]\"", opid);
+    #endif
+
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getoperationstatus",params,"","","","","","")) != 0 )
     {
         //printf("got status (%s)\n",jprint(retjson,0));
@@ -861,7 +866,11 @@ cJSON *z_getoperationstatus(char *refcoin,char *acname,char *opid)
 cJSON *z_getoperationresult(char *refcoin,char *acname,char *opid)
 {
     cJSON *retjson; char *retstr,str[65],params[512];
+    #ifndef NATIVE_WINDOWS
     sprintf(params,"'[\"%s\"]'",opid);
+    #else
+    sprintf(params, "\"[\\\"%s\\\"]\"", opid);
+    #endif
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getoperationresult",params,"","","","","","")) != 0 )
     {
         return(retjson);
@@ -1074,8 +1083,13 @@ void importaddress(char *refcoin,char *acname,char *depositaddr)
 int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *destaddr,int64_t amount,char *memostr)
 {
     cJSON *retjson; char *retstr,params[1024],addr[128]; int32_t retval = -1;
+    #ifndef NATIVE_WINDOWS
     sprintf(params,"'[{\"address\":\"%s\",\"amount\":%.8f,\"memo\":\"%s\"}]'",destaddr,dstr(amount),memostr);
     sprintf(addr,"\"%s\"",srcaddr);
+    #else
+    sprintf(params,"[\"{\\\"address\\\":\\\"%s\\\",\\\"amount\\\":%.8f,\\\"memo\\\":\\\"%s\\\"}]\"",destaddr,dstr(amount),memostr);
+    sprintf(addr,"\"%s\"",srcaddr);
+    #endif
     printf("z_sendmany.(%s %s) from.(%s) -> %s\n",coinstr,acname,srcaddr,params);
     if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_sendmany",addr,params,"","","","","")) != 0 )
     {
@@ -1095,7 +1109,11 @@ int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *
 int32_t z_mergetoaddress(char *opidstr,char *coinstr,char *acname,char *destaddr)
 {
     cJSON *retjson; char *retstr,addr[128],*opstr; int32_t retval = -1;
+    #ifndef NATIVE_WINDOWS
     sprintf(addr,"[\\\"ANY_SPROUT\\\"]");
+    #else
+    sprintf(addr, "\"[\\\"ANY_SPROUT\\\"]\"");
+    #endif
     if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_mergetoaddress",addr,destaddr,"","","","","")) != 0 )
     {
         if ( (opstr= jstr(retjson,"opid")) != 0 )
